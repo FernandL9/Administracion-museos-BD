@@ -1,0 +1,40 @@
+<!-- idioma.html -->
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Idioma</title>
+</head>
+
+<body>
+    <h1>Registrar Idioma</h1>
+    <form id="idiomaForm">
+        <label for="nombre">Nombre del idioma:</label>
+        <input type="text" id="nombre" name="nombre" required>
+        <button type="submit">Guardar</button>
+    </form>
+    <p id="mensaje"></p>
+
+    <script>
+        document.getElementById('idiomaForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+
+            const respuesta = await fetch('http://localhost:3000/api/idiomas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre })
+            });
+
+            const data = await respuesta.json();
+            if (respuesta.ok) {
+                document.getElementById('mensaje').textContent = 'Idioma guardado correctamente.';
+            } else {
+                document.getElementById('mensaje').textContent = 'Error: ' + (data.error || 'No se pudo guardar');
+            }
+        });
+    </script>
+</body>
+
+</html>
