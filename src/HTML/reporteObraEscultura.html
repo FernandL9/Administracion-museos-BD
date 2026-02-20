@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha de Escultura</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-reporte {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 32px 0 24px 0;
+            border-radius: 0 0 12px 12px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            position: relative;
+        }
+        .form-container {
+            max-width: 420px;
+            margin: 0 auto 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 32px 28px 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .select-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 14px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        label {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+            text-align: center;
+            display: block;
+        }
+
+        select {
+            padding: 10px 12px;
+            border: 1px solid #bfc9d1;
+            border-radius: 6px;
+            font-size: 1em;
+            min-width: 220px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        .pdf-btn {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 18px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pdf-btn:hover {
+            background: #219150;
+        }
+
+        .form-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        button[type="submit"] {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        button[type="submit"]:hover {
+            background: #1a232c;
+        }
+
+        .ficha-container {
+            max-width: 600px;
+            margin: 30px auto 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 32px 28px 24px 28px;
+        }
+
+        .ficha-titulo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .ficha-dato {
+            margin-bottom: 10px;
+        }
+
+        .ficha-label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        .mensaje-error {
+            color: #c0392b;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+        .boton-volver {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+    </style>
+    <script>
+        let esculturas = [];
+        let ultimaFicha = "";
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const id_museo = localStorage.getItem('id_museo');
+            if (!id_museo) {
+                alert('Primero debe seleccionar un museo.');
+                window.location.href = 'museo.html';
+                return;
+            }
+            const selectObra = document.getElementById('obra');
+            try {
+                const response = await fetch(`/api/obras-escultura?id_museo=${id_museo}`);
+                esculturas = await response.json();
+                if (esculturas.length === 0) {
+                    selectObra.innerHTML = '<option value="">No hay esculturas disponibles</option>';
+                } else {
+                    selectObra.innerHTML = '<option value="">Seleccione una escultura...</option>';
+                    esculturas.forEach(obra => {
+                        selectObra.innerHTML += `<option value="${obra.id_obra}|${obra.id_coleccion}|${obra.id_est_o}">${obra.nombre}</option>`;
+                    });
+                }
+            } catch (err) {
+                selectObra.innerHTML = '<option value="">Error cargando esculturas</option>';
+            }
+        });
+
+function mostrarFicha(event) {
+    event.preventDefault();
+    const selectObra = document.getElementById('obra');
+    const fichaDiv = document.getElementById('ficha');
+    fichaDiv.innerHTML = '';
+    const value = selectObra.value;
+    if (!value) {
+        fichaDiv.innerHTML = '<div class="mensaje-error">Debe seleccionar una pintura.</div>';
+        ultimaFicha = "";
+        return;
+    }
+    const [id_obra, id_coleccion, id_est_o] = value.split('|');
+    const obra = esculturas.find(o =>
+        o.id_obra == id_obra &&
+        o.id_coleccion == id_coleccion &&
+        o.id_est_o == id_est_o
+    );
+    if (!obra) {
+        fichaDiv.innerHTML = '<div class="mensaje-error">No se encontró la pintura seleccionada.</div>';
+        ultimaFicha = "";
+        return;
+    }
+    // Título principal
+    let fichaHTML = `<div class="ficha-titulo">${obra.nombre}</div>`;
+
+    // Artistas como subtítulo
+    let artistasHTML = '';
+    if (obra.artistas && obra.artistas.length > 0) {
+        artistasHTML = obra.artistas.map(a => {
+            const nombre = [a.primer_nombre, a.segundo_nombre, a.primer_apellido, a.segundo_apellido]
+                .filter(Boolean).join(' ');
+            return nombre || a.apodo || "Anónimo";
+        }).join(', ');
+    } else {
+        artistasHTML = "Anónimo";
+    }
+    fichaHTML += `<div class="ficha-titulo" style="font-size:1.2em; color:#34495e; margin-bottom:10px;">${artistasHTML}</div>`;
+
+    // Tipo como subtítulo
+    let tipoObra = '';
+    if (obra.tipo === 'P') {
+        tipoObra = 'Pintura';
+    } else if (obra.tipo === 'E') {
+        tipoObra = 'Escultura';
+    } else {
+        tipoObra = obra.tipo ?? '';
+    }
+    fichaHTML += `<div class="ficha-titulo" style="font-size:1.1em; color:#888; margin-bottom:18px;">${tipoObra}</div>`;
+
+    fichaHTML += `
+        <div class="ficha-dato"><span class="ficha-label">Año de creación o período:</span> ${obra.ano_creacion ?? ""}</div>
+        <div class="ficha-dato"><span class="ficha-label">Museo:</span> ${obra.nombre_museo ?? ""}</div>
+        <div class="ficha-dato"><span class="ficha-label">Colección:</span> ${obra.nombre_coleccion ?? ""}</div>
+        <div class="ficha-dato"><span class="ficha-label">Sala de Exposición:</span> ${obra.nombre_sala ?? "No asignada"}</div>
+        <div class="ficha-dato"><span class="ficha-label">Descripción/Estilo:</span> ${obra.estilo_descripcion ?? ""}</div>
+        <div class="ficha-dato"><span class="ficha-label">Material y Técnicas:</span> ${obra.material_tecnica_descripcion ?? ""}</div>
+        <div class="ficha-dato"><span class="ficha-label">Dimensiones:</span> ${obra.dimensiones ?? ""}</div>
+    `;
+    if (obra.movimientos && obra.movimientos.length > 0) {
+        fichaHTML += `
+            <div class="ficha-titulo" style="font-size:1.1em;margin-top:24px;">Histórico de Movilidad</div>
+            <div>
+            ${obra.movimientos.map(mov => `
+            <div class="ficha-dato">
+            <span class="ficha-label">Inicio:</span> ${mov.fecha_inicio_adquisicion ? mov.fecha_inicio_adquisicion.substring(0, 10) : ""} |
+            <span class="ficha-label">Fin:</span> ${mov.fecha_final_adquisicion ? mov.fecha_final_adquisicion.substring(0, 10) : "Actual"}<br>
+            <span class="ficha-label">Tipo:</span> ${mov.tipo ?? ""} |
+            <span class="ficha-label">Destacada:</span> ${mov.destacada ? "Sí" : "No"}<br>
+            <span class="ficha-label">Orden Recorrido:</span> ${mov.orden_recorrido_historico ?? ""} |
+            <span class="ficha-label">Valor Monetario:</span> ${mov.valor_monetario ?? ""}
+            </div>
+            `).join('')}
+            </div>
+        `;
+    } else {
+        fichaHTML += `<div class="ficha-dato"><em>No hay histórico de movilidad registrado.</em></div>`;
+    }
+    fichaDiv.innerHTML = fichaHTML;
+    ultimaFicha = fichaHTML;
+}
+
+        async function descargarPDF() {
+            const fichaDiv = document.getElementById('ficha');
+            if (!fichaDiv.innerHTML.trim()) {
+                alert("Primero seleccione una escultura y genere la ficha.");
+                return;
+            }
+            // Captura la ficha exactamente como se ve
+            const canvas = await html2canvas(fichaDiv, {
+                scale: 2,
+                backgroundColor: "#fff",
+                useCORS: true
+            });
+            const imgData = canvas.toDataURL('image/png');
+            // Crea el PDF con el mismo tamaño que la ficha en pantalla
+            const pdfWidth = canvas.width * 0.75; // px to pt (1px ≈ 0.75pt)
+            const pdfHeight = canvas.height * 0.75;
+            const pdf = new window.jspdf.jsPDF({
+                orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+                unit: 'pt',
+                format: [pdfWidth, pdfHeight]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save('Reporte Escultura.pdf');
+        }
+    </script>
+</head>
+
+<body>
+    <div class="titulo-reporte">
+        Reporte Escultura
+    </div><br>
+    <div class="form-container">
+        <form onsubmit="mostrarFicha(event)">
+            <label for="obra">Escultura:</label>
+            <div class="select-row">
+                <select id="obra" name="obra" required>
+                    <option value="">Cargando esculturas...</option>
+                </select>
+            </div>
+            <div class="form-buttons">
+                <button type="submit">Aceptar</button>
+                <button type="button" class="pdf-btn" onclick="descargarPDF()">Descargar PDF</button>
+            </div>
+        </form>
+    </div>
+    <div id="ficha" class="ficha-container"></div>
+    <div class="boton-volver">
+        <button onclick="window.location.href='menu.html'">Volver</button>
+    </div>
+    <div style="width:100%; text-align:center; margin-top:30px; color:#888; font-size:1em;">
+        &copy;Copyright 2025, Grupo 7 A, todos los derechos reservados
+    </div><br>
+</body>
+
+</html>

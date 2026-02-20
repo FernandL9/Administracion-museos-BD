@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Nuevo Empleado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+
+        form {
+            background: #fff;
+            max-width: 450px;
+            margin: 30px auto 0 auto;
+            padding: 32px 28px 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+        }
+
+        input,
+        select,
+        button {
+            margin-top: 4px;
+            padding: 8px 10px;
+            border: 1px solid #bfc9d1;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            padding: 14px 14px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1a232c;
+        }
+
+        #cargo {
+            width: 100%;
+        }
+
+        #formacion,
+        #telefono-group {
+            margin-bottom: 0;
+        }
+
+        .boton-volver {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        #estructura-org-group {
+            display: none;
+        }
+    </style>
+    <script>
+        let estructurasOrg = [];
+
+        function onCargoChange() {
+            const cargo = document.getElementById('cargo').value;
+            const formacion = document.getElementById('formacion');
+            const telefono = document.getElementById('telefono-group');
+            const estructuraOrgGroup = document.getElementById('estructura-org-group');
+
+            if (cargo === 'Vigilante' || cargo === 'Mantenimiento') {
+                formacion.style.display = 'none';
+                telefono.style.display = 'none';
+                estructuraOrgGroup.style.display = 'none';
+            } else {
+                formacion.style.display = 'block';
+                telefono.style.display = 'block';
+                estructuraOrgGroup.style.display = 'block';
+            }
+        }
+
+        async function cargarEstructurasOrg() {
+            const id_museo = localStorage.getItem('id_museo');
+            if (!id_museo) return;
+            const estructuraOrgSelect = document.getElementById('estructura_org');
+            estructuraOrgSelect.innerHTML = '<option value="">Seleccione una estructura...</option>';
+            try {
+                const res = await fetch(`/api/estructuras-org?id_museo=${id_museo}`);
+                estructurasOrg = await res.json();
+                estructurasOrg.forEach(est => {
+                    const option = document.createElement('option');
+                    option.value = est.id_est_o;
+                    option.textContent = est.nombre;
+                    estructuraOrgSelect.appendChild(option);
+                });
+            } catch {
+                estructuraOrgSelect.innerHTML = '<option value="">Error cargando estructuras</option>';
+            }
+        }
+
+        async function registrarEmpleado(event) {
+            event.preventDefault();
+            const cargo = document.getElementById('cargo').value;
+            const data = {
+                primer_nombre: document.getElementById('primer_nombre').value,
+                segundo_nombre: document.getElementById('segundo_nombre').value,
+                primer_apellido: document.getElementById('primer_apellido').value,
+                segundo_apellido: document.getElementById('segundo_apellido').value,
+                fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
+                genero: document.getElementById('genero').value,
+                doc_identidad: document.getElementById('doc_identidad').value,
+                cargo: cargo
+            };
+            data.id_idioma = document.getElementById('idioma').value;
+            const id_museo = localStorage.getItem('id_museo');
+            data.id_museo = id_museo;
+
+            if (cargo !== 'Vigilante' && cargo !== 'Mantenimiento') {
+                data.telefono = document.getElementById('telefono').value;
+                data.titulo_obtenido = document.getElementById('titulo_obtenido').value;
+                data.anio = document.getElementById('anio').value;
+                data.descripcion_esp = document.getElementById('descripcion_esp').value;
+                // Estructura orgánica seleccionada
+                data.id_est_o = document.getElementById('estructura_org').value;
+                if (!data.id_est_o) {
+                    alert('Debe seleccionar una estructura orgánica.');
+                    return;
+                }
+            }
+
+            const url = '/api/empleados';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert('Empleado registrado correctamente');
+                document.getElementById('empleado-form').reset();
+            } else {
+                alert('Error al registrar empleado');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const idiomaSelect = document.getElementById('idioma');
+            const response = await fetch('/api/idiomas');
+            const idiomas = await response.json();
+            idiomas.forEach(idioma => {
+                const option = document.createElement('option');
+                option.value = idioma.id_idioma;
+                option.textContent = idioma.nombre;
+                idiomaSelect.appendChild(option);
+            });
+
+            await cargarEstructurasOrg();
+        });
+    </script>
+</head>
+
+<body>
+    <h2>Registrar Nuevo Expediente de Empleado</h2>
+    <form id="empleado-form" onsubmit="registrarEmpleado(event)">
+        <label>Cargo:
+            <select id="cargo" onchange="onCargoChange()" required>
+                <option value="">Seleccione...</option>
+                <option value="Director">Director</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Curador">Curador</option>
+                <option value="Restaurador">Restaurador</option>
+                <option value="Vigilante">Vigilante</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+            </select>
+        </label>
+        <label>Primer Nombre: <input type="text" id="primer_nombre" required></label>
+        <label>Segundo Nombre: <input type="text" id="segundo_nombre"></label>
+        <label>Primer Apellido: <input type="text" id="primer_apellido" required></label>
+        <label>Segundo Apellido: <input type="text" id="segundo_apellido" required></label>
+        <label>Fecha de Nacimiento: <input type="date" id="fecha_nacimiento" required></label>
+        <label>Género:
+            <select id="genero" required>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+            </select>
+        </label>
+        <div id="telefono-group">
+            <label>Teléfono: <input type="text" id="telefono"></label>
+        </div>
+        <label>Documento de Identidad: <input type="text" id="doc_identidad" required></label>
+        <div id="formacion">
+            <label>Título Obtenido: <input type="text" id="titulo_obtenido"></label>
+            <label>Año de la Obtención: <input type="date" id="anio"></label>
+            <label>Descripción de la Especialización: <input type="text" id="descripcion_esp"></label>
+        </div>
+        <div id="estructura-org-group">
+            <label>Estructura Orgánica:
+                <select id="estructura_org" name="estructura_org">
+                    <option value="">Seleccione una estructura...</option>
+                </select>
+            </label>
+        </div>
+        <label>Idioma:
+            <select id="idioma" name="idioma" required>
+                <option value="">Seleccione un idioma...</option>
+            </select>
+        </label>
+        <button type="submit">Registrar</button>
+    </form>
+    <div class="boton-volver">
+        <button onclick="window.location.href='menu.html'">Volver</button>
+    </div><br>
+</body>
+
+</html>

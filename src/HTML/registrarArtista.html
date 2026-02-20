@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Artista</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+    
+        .container {
+            max-width: 480px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 32px 28px 24px 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 24px;
+        }
+    
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    
+        label {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+            display: block;
+            width: 80%;
+            text-align: left;
+        }
+    
+        input,
+        select,
+        textarea {
+            width: 80%;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border: 1px solid #bfc9d1;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+            display: block;
+        }
+    
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+    
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 0;
+            font-size: 1.1em;
+            cursor: pointer;
+            width: 80%;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+    
+        button:hover {
+            background: #1a232c;
+        }
+    
+        .mensaje-exito {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+    
+        .mensaje-error {
+            color: #c0392b;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+    
+        .boton-volver {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Cargar lugares
+            const lugarSelect = document.getElementById('id_lugar');
+            try {
+                const res = await fetch('/api/lugares');
+                const lugares = await res.json();
+                lugarSelect.innerHTML = '<option value="">Sin lugar registrado</option>';
+                lugares.forEach(lugar => {
+                    lugarSelect.innerHTML += `<option value="${lugar.id_lugar}">${lugar.nombre}</option>`;
+                });
+            } catch (err) {
+                lugarSelect.innerHTML = '<option value="">Error cargando lugares</option>';
+            }
+        });
+
+        async function registrarArtista(event) {
+            event.preventDefault();
+            // Obtener valores
+            let primer_nombre = document.getElementById('primer_nombre').value.trim();
+            let segundo_nombre = document.getElementById('segundo_nombre').value.trim();
+            let primer_apellido = document.getElementById('primer_apellido').value.trim();
+            let segundo_apellido = document.getElementById('segundo_apellido').value.trim();
+            let apodo = document.getElementById('apodo').value.trim();
+            let fecha_nacimiento = document.getElementById('fecha_nacimiento').value;
+            let fecha_muerte = document.getElementById('fecha_muerte').value;
+            let resumen_caracteristicas_arte = document.getElementById('resumen_caracteristicas_arte').value.trim();
+            let id_lugar = document.getElementById('id_lugar').value;
+
+            // Si todos los nombres están vacíos, poner "anónimo" en primer_nombre
+            if (!primer_nombre && !segundo_nombre && !primer_apellido && !segundo_apellido && !apodo) {
+                primer_nombre = "anónimo";
+            }
+
+            if (!resumen_caracteristicas_arte) {
+                mostrarMensaje("El resumen de características artísticas es obligatorio.", false);
+                return;
+            }
+
+            const data = {
+                primer_nombre,
+                segundo_nombre,
+                primer_apellido,
+                segundo_apellido,
+                apodo,
+                fecha_nacimiento: fecha_nacimiento || null,
+                fecha_muerte: fecha_muerte || null,
+                resumen_caracteristicas_arte,
+                id_lugar: id_lugar || null
+            };
+
+            try {
+                const response = await fetch('/api/artistas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    mostrarMensaje("Artista registrado correctamente.", true);
+                    document.getElementById('artista-form').reset();
+                } else {
+                    mostrarMensaje("Error al registrar artista.", false);
+                }
+            } catch (error) {
+                mostrarMensaje("Error al registrar artista.", false);
+            }
+        }
+
+        function mostrarMensaje(msg, exito) {
+            const mensajeDiv = document.getElementById('mensaje');
+            mensajeDiv.textContent = msg;
+            mensajeDiv.className = exito ? 'mensaje-exito' : 'mensaje-error';
+        }
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Registrar Artista</h2>
+        <form id="artista-form" onsubmit="registrarArtista(event)">
+            <label for="primer_nombre">Primer Nombre:</label>
+            <input type="text" id="primer_nombre" name="primer_nombre">
+
+            <label for="segundo_nombre">Segundo Nombre:</label>
+            <input type="text" id="segundo_nombre" name="segundo_nombre">
+
+            <label for="primer_apellido">Primer Apellido:</label>
+            <input type="text" id="primer_apellido" name="primer_apellido">
+
+            <label for="segundo_apellido">Segundo Apellido:</label>
+            <input type="text" id="segundo_apellido" name="segundo_apellido">
+
+            <label for="apodo">Apodo:</label>
+            <input type="text" id="apodo" name="apodo">
+
+            <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
+            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento">
+
+            <label for="fecha_muerte">Fecha de Muerte:</label>
+            <input type="date" id="fecha_muerte" name="fecha_muerte">
+
+            <label for="id_lugar">Lugar de Nacimiento:</label>
+            <select id="id_lugar" name="id_lugar">
+                <option value="">Sin lugar registrado</option>
+            </select>
+
+            <label for="resumen_caracteristicas_arte">Resumen de características artísticas: <span
+                    style="color:#c0392b">*</span></label>
+            <textarea id="resumen_caracteristicas_arte" name="resumen_caracteristicas_arte" required></textarea>
+
+            <button type="submit">Registrar Artista</button>
+            <div id="mensaje"></div>
+        </form>
+        <div class="boton-volver">
+            <button onclick="window.location.href='menu.html'">Volver</button>
+        </div>
+    </div>
+</body>
+
+</html>

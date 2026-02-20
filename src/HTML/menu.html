@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Menú Museo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-menu {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            margin: 40px auto 0 auto;
+            padding: 24px 60px;
+            border-radius: 50px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .titulo-menu-container {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .menu-botones {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            max-width: 350px;
+            margin: 0 auto;
+            align-items: center;
+        }
+
+        .menu-botones button {
+            width: 100%;
+            padding: 16px 0;
+            background: #2c3e50;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.15em;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .menu-botones button:hover {
+            background: #1a232c;
+            transform: translateY(-2px) scale(1.03);
+        }
+
+        @media (max-width: 600px) {
+            .titulo-menu {
+                font-size: 1.3em;
+                padding: 16px 10px;
+            }
+
+            .menu-botones {
+                max-width: 95vw;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const idMuseo = localStorage.getItem('id_museo');
+            const tituloDiv = document.getElementById('titulo-menu');
+            if (idMuseo) {
+                try {
+                    const res = await fetch(`/api/museo-nombre?id_museo=${idMuseo}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        tituloDiv.textContent = `Menú del ${data.nombre}`;
+                    } else {
+                        tituloDiv.textContent = 'Menú del Museo';
+                    }
+                } catch {
+                    tituloDiv.textContent = 'Menú del Museo';
+                }
+            } else {
+                tituloDiv.textContent = 'Menú del Museo';
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div class="titulo-menu-container">
+        <div class="titulo-menu" id="titulo-menu">
+            Menú del 
+        </div>
+    </div>
+    <div class="menu-botones">
+        <button onclick="window.location.href='empleadoN.html'">Nuevo Expediente Empleado</button>
+        <button onclick="window.location.href='registroPintura.html'">Registrar Pintura</button>
+        <button onclick="window.location.href='registroEscultura.html'">Registrar Escultura</button>
+        <button onclick="window.location.href='historicoM.html'">Registrar Hecho Histórico</button>
+        <button onclick="window.location.href='reporteObra.html'">Reporte Pintura</button>
+        <button onclick="window.location.href='reporteObraEscultura.html'">Reporte Escultura</button>
+        <button onclick="window.location.href='reporteArtista.html'">Reporte Artista</button>
+        <button onclick="window.location.href='reporteItinerario.html'">Reporte Itinerario</button>
+        <button onclick="window.location.href='museo.html'">Volver</button><br>
+    </div>
+</body>
+
+</html>

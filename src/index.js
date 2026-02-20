@@ -5,8 +5,7 @@ import router from './routes/routes.js';
 const app = express();
 app.use(express.json());
 
-// Sirve archivos estáticos desde la carpeta donde está tu HTML
-app.use(express.static('src/HTML')); // aquí
+app.use(express.static('src/HTML'));
 
 app.use('/api', router);
 

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Colecciones</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-reporte {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 32px 0 24px 0;
+            border-radius: 0 0 12px 12px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            position: relative;
+        }
+
+        .fichas-container {
+            max-width: 700px;
+            margin: 30px auto 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .ficha-coleccion {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 28px 24px 20px 24px;
+        }
+
+        .ficha-titulo {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        .ficha-dato {
+            margin-bottom: 10px;
+        }
+
+        .ficha-label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        .mensaje-error {
+            color: #c0392b;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 14px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        .boton-volver {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #1a232c;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const contenedor = document.getElementById('colecciones');
+            const id_museo = localStorage.getItem('id_museo');
+            if (!id_museo) {
+                contenedor.innerHTML = '<div class="mensaje-error">Debe seleccionar un museo en la pantalla principal.</div>';
+                return;
+            }
+            try {
+                const res = await fetch(`/api/colecciones-reporte?id_museo=${id_museo}`);
+                const colecciones = await res.json();
+                if (!colecciones.length) {
+                    contenedor.innerHTML = '<div class="mensaje-error">No hay colecciones registradas para este museo.</div>';
+                    return;
+                }
+                let fichas = '';
+                colecciones.forEach(col => {
+                    let salas = col.salas && col.salas.length > 0
+                        ? col.salas.map(s => s.nombre_sala).join(', ')
+                        : 'No asignada';
+                    fichas += `
+                <div class="ficha-coleccion">
+                    <div class="ficha-titulo">${col.nombre}</div>
+                    <div class="ficha-dato"><span class="ficha-label">Descripción:</span> ${col.descripcion}</div>
+                    <div class="ficha-dato"><span class="ficha-label">Palabra Clave:</span> ${col.palabra_clave}</div>
+                    <div class="ficha-dato"><span class="ficha-label">Orden de Recorrido:</span> ${col.orden_recorrido}</div>
+                    <div class="ficha-dato"><span class="ficha-label">Sala de Exposición:</span> ${salas}</div>
+                </div>
+            `;
+                });
+                contenedor.innerHTML = `<div class="fichas-container">${fichas}</div>`;
+            } catch (error) {
+                contenedor.innerHTML = '<div class="mensaje-error">Error cargando colecciones.</div>';
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div class="titulo-reporte">
+        Reporte de Colecciones
+    </div>
+    <div id="colecciones"></div>
+    <div class="boton-volver">
+        <button onclick="window.location.href='menu.html'">Volver</button>
+    </div>
+    <div style

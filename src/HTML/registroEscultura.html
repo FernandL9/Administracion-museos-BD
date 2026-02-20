@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Escultura</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-registro-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+
+        .titulo-registro {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            padding: 24px 60px;
+            border-radius: 50px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        form {
+            background: #fff;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 32px 28px 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+        }
+
+        input,
+        select,
+        textarea {
+            margin-top: 4px;
+            padding: 10px 12px;
+            border: 1px solid #bfc9d1;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 14px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1a232c;
+        }
+
+        .mensaje-exito {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        .mensaje-error {
+            color: #c0392b;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        .boton-volver {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .artista-row,
+        .curador-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .artista-row select,
+        .curador-row select {
+            flex: 1;
+        }
+
+        .artista-row button,
+        .curador-row button {
+            padding: 10px 16px;
+            font-size: 1em;
+            background: #27ae60;
+            border-radius: 6px;
+            margin-top: 0;
+        }
+
+        .artista-row button:hover,
+        .curador-row button:hover {
+            background: #219150;
+        }
+
+        #orden_recorrido_group {
+            display: none;
+        }
+    </style>
+    <script>
+        // Mostrar/ocultar campo "Orden recorrido" según si está marcada "Obra destacada"
+        function toggleOrdenRecorrido() {
+            const destacada = document.getElementById('destacada').checked;
+            const ordenRecorridoGroup = document.getElementById('orden_recorrido_group');
+            const ordenRecorridoInput = document.getElementById('orden_recorrido');
+            if (destacada) {
+                ordenRecorridoGroup.style.display = 'block';
+                ordenRecorridoInput.required = true;
+            } else {
+                ordenRecorridoGroup.style.display = 'none';
+                ordenRecorridoInput.required = false;
+                ordenRecorridoInput.value = '';
+            }
+        }
+
+        // Cargar colecciones, salas, artistas y curadores al cargar la página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Colecciones
+            const coleccionSelect = document.getElementById('coleccion');
+            const id_museo = localStorage.getItem('id_museo');
+            if (!id_museo) {
+                alert('Primero debe seleccionar un museo.');
+                window.location.href = 'museo.html';
+                return;
+            }
+            const response = await fetch(`/api/colecciones?id_museo=${id_museo}`);
+            const colecciones = await response.json();
+            colecciones.forEach(col => {
+                const option = document.createElement('option');
+                option.value = `${col.id_coleccion}|${col.id_est_o}`;
+                option.textContent = col.nombre;
+                coleccionSelect.appendChild(option);
+            });
+
+            // Salas de exposición
+            const salaSelect = document.getElementById('sala_exp');
+            const salasResponse = await fetch(`/api/salas?id_museo=${id_museo}`);
+            const salas = await salasResponse.json();
+            salas.forEach(sala => {
+                const option = document.createElement('option');
+                option.value = `${sala.id_sala_exp}|${sala.id_est_f}`;
+                option.textContent = sala.nombre;
+                salaSelect.appendChild(option);
+            });
+
+            // Artistas
+            const artistaSelect = document.getElementById('artistas');
+            try {
+                const res = await fetch('/api/artistas');
+                const artistas = await res.json();
+                artistaSelect.innerHTML = '';
+                // Campo vacío para "anónimo"
+                artistaSelect.innerHTML += `<option value="">Anónimo</option>`;
+                artistas.forEach(artista => {
+                    const nombre = [artista.primer_nombre, artista.segundo_nombre, artista.primer_apellido, artista.segundo_apellido]
+                        .filter(Boolean).join(' ') || artista.apodo || "Artista sin nombre";
+                    artistaSelect.innerHTML += `<option value="${artista.id_artista}">${nombre}</option>`;
+                });
+            } catch (err) {
+                artistaSelect.innerHTML = '<option value="">Error cargando artistas</option>';
+            }
+
+            // Curadores
+            const curadorSelect = document.getElementById('curador');
+            try {
+                const res = await fetch(`/api/empleados-curador?id_museo=${id_museo}`);
+                const curadores = await res.json();
+                curadorSelect.innerHTML = '<option value="">Seleccione un curador...</option>';
+                curadores.forEach(curador => {
+                    const nombre = [curador.primer_nombre, curador.segundo_nombre, curador.primer_apellido, curador.segundo_apellido]
+                        .filter(Boolean).join(' ');
+                    curadorSelect.innerHTML += `<option value="${curador.expediente}">${nombre}</option>`;
+                });
+            } catch (err) {
+                curadorSelect.innerHTML = '<option value="">Error cargando curadores</option>';
+            }
+        });
+
+        async function registrarEscultura(event) {
+            event.preventDefault();
+            const nombre = document.getElementById('nombre').value.trim();
+            const ano_creacion = document.getElementById('ano_creacion').value.trim();
+            const estilo_descripcion = document.getElementById('estilo_descripcion').value.trim();
+            const material_tecnica_descripcion = document.getElementById('material_tecnica_descripcion').value.trim();
+            const dimensiones = document.getElementById('dimensiones').value.trim();
+            const coleccionValue = document.getElementById('coleccion').value;
+            const id_museo = localStorage.getItem('id_museo');
+            if (!coleccionValue) {
+                mostrarMensaje('Debe seleccionar una colección.', false);
+                return;
+            }
+            const [id_coleccion, id_est_o] = coleccionValue.split('|');
+
+            // Obtener artistas seleccionados (puede ser vacío)
+            const artistaSelect = document.getElementById('artistas');
+            const artistasSeleccionados = Array.from(artistaSelect.selectedOptions)
+                .map(opt => opt.value)
+                .filter(val => val !== "");
+
+            // Tipo de obra
+            const tipo_obra = document.getElementById('tipo_obra').value;
+            // Destacada
+            const destacada = document.getElementById('destacada').checked;
+            // Orden sala (obligatorio)
+            const id_orden = document.getElementById('id_orden').value;
+            if (!id_orden) {
+                mostrarMensaje('Debe ingresar el orden de la sala.', false);
+                return;
+            }
+            // Orden recorrido (solo si destacada)
+            let orden_recorrido = null;
+            if (destacada) {
+                orden_recorrido = document.getElementById('orden_recorrido').value;
+                if (!orden_recorrido) {
+                    mostrarMensaje('Debe ingresar el orden de recorrido para una obra destacada.', false);
+                    return;
+                }
+            }
+            // Valor monetario (opcional)
+            const valor_monetario = document.getElementById('valor_monetario').value;
+            // Curador
+            const expediente = document.getElementById('curador').value;
+            if (!expediente) {
+                mostrarMensaje('Debe seleccionar un curador.', false);
+                return;
+            }
+            const salaValue = document.getElementById('sala_exp').value;
+            if (!salaValue) {
+                mostrarMensaje('Debe seleccionar una sala de exposición.', false);
+                return;
+            }
+            const [id_sala_exp, id_est_f] = salaValue.split('|');
+
+            const data = {
+                nombre,
+                ano_creacion,
+                tipo: 'E',
+                estilo_descripcion,
+                material_tecnica_descripcion,
+                dimensiones,
+                id_museo,
+                id_coleccion,
+                id_est_o,
+                tipo_obra,
+                destacada,
+                id_orden,
+                orden_recorrido: orden_recorrido || null,
+                valor_monetario: valor_monetario || null,
+                expediente,
+                id_sala_exp,
+                id_est_f
+            };
+
+            try {
+                // Registrar la escultura
+                const response = await fetch('/api/obras', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) throw new Error("Error al registrar la escultura.");
+                const obra = await response.json();
+
+                // Relacionar artistas con la obra (tabla O_A)
+                if (artistasSeleccionados.length > 0) {
+                    for (const id_artista of artistasSeleccionados) {
+                        await fetch('/api/obra-artista', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                id_artista,
+                                id_obra: obra.id_obra,
+                                id_coleccion: obra.id_coleccion,
+                                id_est_o: obra.id_est_o,
+                                id_museo: obra.id_museo
+                            })
+                        });
+                    }
+                } else {
+                    // Si no se seleccionó artista, registrar como "anónimo" (id_artista = null)
+                    await fetch('/api/obra-artista', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id_artista: null,
+                            id_obra: obra.id_obra,
+                            id_coleccion: obra.id_coleccion,
+                            id_est_o: obra.id_est_o,
+                            id_museo: obra.id_museo
+                        })
+                    });
+                }
+
+                mostrarMensaje('Escultura registrada correctamente.', true);
+                document.getElementById('escultura-form').reset();
+                toggleOrdenRecorrido();
+            } catch (error) {
+                mostrarMensaje('Error al registrar la escultura.', false);
+            }
+        }
+
+        function mostrarMensaje(msg, exito) {
+            const mensajeDiv = document.getElementById('mensaje');
+            mensajeDiv.textContent = msg;
+            mensajeDiv.className = exito ? 'mensaje-exito' : 'mensaje-error';
+        }
+    </script>
+</head>
+
+<body>
+    <div class="titulo-registro-container">
+        <div class="titulo-registro">
+            Registrar Escultura
+        </div>
+    </div>
+    <form id="escultura-form" onsubmit="registrarEscultura(event)">
+        <label for="nombre">Nombre de la Obra:</label>
+        <input type="text" id="nombre" name="nombre" required>
+
+        <label for="ano_creacion">Año de creación o período:</label>
+        <input type="text" id="ano_creacion" name="ano_creacion" required>
+
+        <label for="estilo_descripcion">Descripción/Estilo:</label>
+        <textarea id="estilo_descripcion" name="estilo_descripcion" required></textarea>
+
+        <label for="material_tecnica_descripcion">Material y Técnicas:</label>
+        <textarea id="material_tecnica_descripcion" name="material_tecnica_descripcion" required></textarea>
+
+        <label for="dimensiones">Dimensiones:</label>
+        <input type="text" id="dimensiones" name="dimensiones" required>
+
+        <label for="coleccion">Colección:</label>
+        <select id="coleccion" name="coleccion" required>
+            <option value="">Seleccione una colección...</option>
+        </select>
+
+        <label for="sala_exp">Sala de Exposición:</label>
+        <select id="sala_exp" name="sala_exp" required>
+            <option value="">Seleccione una sala...</option>
+        </select>
+
+        <label for="id_orden">Orden sala:</label>
+        <input type="number" id="id_orden" name="id_orden" min="1" required>
+
+        <label for="tipo_obra">Tipo de Obra:</label>
+        <select id="tipo_obra" name="tipo_obra" required>
+            <option value="CO">Comprada</option>
+            <option value="DO">Donada</option>
+            <option value="CM">Comprada a museo</option>
+            <option value="DM">Donada a museo</option>
+        </select>
+
+        <label>
+            <input type="checkbox" id="destacada" name="destacada" onchange="toggleOrdenRecorrido()">
+            ¿Obra destacada?
+        </label>
+
+        <div id="orden_recorrido_group">
+            <label for="orden_recorrido">Orden de Recorrido:</label>
+            <input type="number" id="orden_recorrido" name="orden_recorrido" min="1">
+        </div>
+
+        <label for="valor_monetario">Valor Monetario (opcional):</label>
+        <input type="number" id="valor_monetario" name="valor_monetario" min="0" step="any">
+
+        <label for="curador">Curador responsable:</label>
+        <div class="curador-row">
+            <select id="curador" name="curador" required>
+                <option value="">Cargando curadores...</option>
+            </select>
+            <button type="button" onclick="window.location.href='empleadoN.html'">Registrar Empleado</button>
+        </div>
+        <small>Solo se muestran empleados con cargo de CURADOR en este museo.</small>
+
+        <label for="artistas">Artista(s):</label>
+        <div class="artista-row">
+            <select id="artistas" name="artistas" multiple size="3">
+                <option value="">Anónimo</option>
+            </select>
+            <button type="button" onclick="window.location.href='registrarArtista.html'">Registrar Artista</button>
+        </div>
+        <small>Puedes seleccionar uno o más artistas. Si no seleccionas ninguno, se guardará como "anónimo".</small>
+
+        <button type="submit">Registrar Escultura</button>
+        <div id="mensaje"></div>
+    </form>
+    <div class="boton-volver">
+        <button onclick="window.location.href='menu.html'">Volver</button>
+    </div><br>
+</body>
+
+</html>

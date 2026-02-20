@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Seleccionar Museo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-museo-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+
+        .titulo-museo {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            padding: 24px 60px;
+            border-radius: 50px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        form {
+            background: #fff;
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 32px 28px 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+        }
+
+        select,
+        button {
+            margin-top: 4px;
+            padding: 10px 12px;
+            border: 1px solid #bfc9d1;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1a232c;
+        }
+
+        @media (max-width: 600px) {
+            .titulo-museo {
+                font-size: 1.3em;
+                padding: 16px 10px;
+            }
+
+            form {
+                max-width: 98vw;
+                padding: 18px 4vw;
+            }
+        }
+    </style>
+    <script>
+        function seleccionarMuseo(event) {
+            event.preventDefault();
+            const museoSelect = document.getElementById('museo');
+            const id_museo = museoSelect.value;
+            localStorage.setItem('id_museo', id_museo);
+            window.location.href = 'menu.html';
+        }
+    </script>
+</head>
+
+<body>
+    <div class="titulo-museo-container">
+        <div class="titulo-museo">
+            Selecciona un museo
+        </div>
+    </div>
+    <form onsubmit="seleccionarMuseo(event)">
+        <label for="museo">Museo:</label>
+        <select id="museo" name="museo" required>
+            <option value="">Seleccione...</option>
+            <option value="1">Museo de Arte Memorial Allen</option>
+            <option value="2">David Owsley Museum of Art</option>
+            <option value="3">Museo Torres García</option>
+            <option value="4">Museo de Arte Precolombino e Indígena</option>
+            <option value="5">Museo Britanico</option>
+            <option value="6">Museo Ashmolean</option>
+            <option value="7">Museo de Bellas Artes de Sevilla</option>
+            <option value="8">Museo Sorolla</option>
+        </select>
+        <button type="submit">Continuar</button>
+    </form>
+</body>
+
+</html>

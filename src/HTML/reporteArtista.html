@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Artista</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-reporte {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 32px 0 24px 0;
+            border-radius: 0 0 12px 12px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            position: relative;
+        }
+
+        .form-container {
+            max-width: 420px;
+            margin: 0 auto 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 32px 28px 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .select-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+            text-align: center;
+            display: block;
+        }
+
+        select {
+            padding: 10px 12px;
+            border: 1px solid #bfc9d1;
+            border-radius: 6px;
+            font-size: 1em;
+            min-width: 220px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        .pdf-btn {
+            background: #27ae60;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 18px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pdf-btn:hover {
+            background: #219150;
+        }
+
+        .form-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        button[type="submit"] {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        button[type="submit"]:hover {
+            background: #1a232c;
+        }
+
+        .ficha-container {
+            max-width: 600px;
+            margin: 30px auto 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 32px 28px 24px 28px;
+        }
+
+        .ficha-titulo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .ficha-dato {
+            margin-bottom: 10px;
+        }
+
+        .ficha-label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        .mensaje-error {
+            color: #c0392b;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        .obras-lista {
+            margin-top: 24px;
+        }
+
+        .obras-lista ul {
+            margin: 0 0 0 20px;
+            padding: 0;
+        }
+
+        .obras-lista li {
+            margin-bottom: 6px;
+        }
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 14px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .boton-volver {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>
+        let artistas = [];
+        let obrasArtista = [];
+        let ultimaFicha = "";
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const selectArtista = document.getElementById('artista');
+            try {
+                const response = await fetch('/api/artistas');
+                artistas = await response.json();
+                if (artistas.length === 0) {
+                    selectArtista.innerHTML = '<option value="">No hay artistas disponibles</option>';
+                } else {
+                    selectArtista.innerHTML = '<option value="">Seleccione un artista...</option>';
+                    artistas.forEach(artista => {
+                        const nombre = [artista.primer_nombre, artista.segundo_nombre, artista.primer_apellido, artista.segundo_apellido]
+                            .filter(Boolean).join(' ');
+                        selectArtista.innerHTML += `<option value="${artista.id_artista}">${nombre || artista.apodo || "Artista sin nombre"}</option>`;
+                    });
+                }
+            } catch (err) {
+                selectArtista.innerHTML = '<option value="">Error cargando artistas</option>';
+            }
+        });
+
+        function mostrarCampo(valor) {
+            return (valor === null || valor === undefined || valor === "") ? "desconocido" : valor;
+        }
+
+        async function mostrarFicha(event) {
+            event.preventDefault();
+            const selectArtista = document.getElementById('artista');
+            const fichaDiv = document.getElementById('ficha');
+            fichaDiv.innerHTML = '';
+            const id_artista = selectArtista.value;
+            if (!id_artista) {
+                fichaDiv.innerHTML = '<div class="mensaje-error">Debe seleccionar un artista.</div>';
+                ultimaFicha = "";
+                return;
+            }
+            const artista = artistas.find(a => a.id_artista == id_artista);
+            if (!artista) {
+                fichaDiv.innerHTML = '<div class="mensaje-error">No se encontró el artista seleccionado.</div>';
+                ultimaFicha = "";
+                return;
+            }
+
+            // Traer obras del artista
+            let obras = [];
+            try {
+                const response = await fetch(`/api/obras-por-artista?id_artista=${id_artista}`);
+                obras = await response.json();
+            } catch (err) {
+                obras = [];
+            }
+
+            let fichaHTML = `
+                <div class="ficha-titulo">${mostrarCampo([artista.primer_nombre, artista.segundo_nombre, artista.primer_apellido, artista.segundo_apellido].filter(Boolean).join(' ') || artista.apodo)}</div>
+                <div class="ficha-dato"><span class="ficha-label">Apodo:</span> ${mostrarCampo(artista.apodo)}</div>
+                <div class="ficha-dato"><span class="ficha-label">Fecha de nacimiento:</span> ${mostrarCampo(artista.fecha_nacimiento ? artista.fecha_nacimiento.substring(0, 10) : null)}</div>
+                <div class="ficha-dato"><span class="ficha-label">Fecha de muerte:</span> ${mostrarCampo(artista.fecha_muerte ? artista.fecha_muerte.substring(0, 10) : null)}</div>
+                <div class="ficha-dato"><span class="ficha-label">Lugar de origen:</span> ${mostrarCampo(artista.nombre_lugar)}</div>
+                <div class="ficha-dato"><span class="ficha-label">Resumen de características artísticas:</span> ${mostrarCampo(artista.resumen_caracteristicas_arte)}</div>
+            `;
+
+            // Lista de obras
+            fichaHTML += `<div class="obras-lista"><span class="ficha-label">Obras del artista:</span>`;
+            if (obras.length > 0) {
+                fichaHTML += `<ul>`;
+                obras.forEach(obra => {
+                    fichaHTML += `<li><b>${mostrarCampo(obra.nombre_obra)}</b> (${mostrarCampo(obra.tipo_obra)}) - Museo: <b>${mostrarCampo(obra.nombre_museo)}</b></li>`;
+                });
+                fichaHTML += `</ul>`;
+            } else {
+                fichaHTML += `<div style="margin-top:8px;"><em>No hay obras registradas para este artista.</em></div>`;
+            }
+            fichaHTML += `</div>`;
+
+            fichaDiv.innerHTML = fichaHTML;
+            ultimaFicha = fichaHTML;
+        }
+
+        async function descargarPDF() {
+            const fichaDiv = document.getElementById('ficha');
+            if (!fichaDiv.innerHTML.trim()) {
+                alert("Primero seleccione un artista y genere la ficha.");
+                return;
+            }
+            const canvas = await html2canvas(fichaDiv, {
+                scale: 2,
+                backgroundColor: "#fff",
+                useCORS: true
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const pdfWidth = canvas.width * 0.75;
+            const pdfHeight = canvas.height * 0.75;
+            const pdf = new window.jspdf.jsPDF({
+                orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+                unit: 'pt',
+                format: [pdfWidth, pdfHeight]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save('Reporte Artista.pdf');
+        }
+    </script>
+</head>
+
+<body>
+    <div class="titulo-reporte">
+        Reporte Artista
+    </div>
+    <div class="form-container">
+        <form onsubmit="mostrarFicha(event)">
+            <label for="artista">Artista:</label>
+            <div class="select-row">
+                <select id="artista" name="artista" required>
+                    <option value="">Cargando artistas...</option>
+                </select>
+            </div>
+            <div class="form-buttons">
+                <button type="submit">Aceptar</button>
+                <button type="button" class="pdf-btn" onclick="descargarPDF()">Descargar PDF</button>
+            </div>
+        </form>
+    </div>
+    <div id="ficha" class="ficha-container"></div>
+    <div class="boton-volver">
+        <button onclick="window.location.href='menu.html'">Volver</button>
+    </div>
+    <div style="width:100%; text-align:center; margin-top:30px; color:#888; font-size:1em;">
+        &copy;Copyright 2025, Grupo 7 A, todos los derechos reservados
+    </div>
+</body>
+
+</html>

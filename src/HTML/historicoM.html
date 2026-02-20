@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ingresar Hecho Histórico</title>
+    <style>
+        #fecha_anio-label {
+            font-size: 1.15em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .titulo-historico-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 30px;
+        }
+
+        .titulo-historico {
+            background: #2c3e50;
+            color: #fff;
+            text-align: center;
+            padding: 24px 60px;
+            border-radius: 50px;
+            font-size: 2.2em;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        form {
+            background: #fff;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 32px 28px 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #34495e;
+            margin-bottom: 4px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-size: 1.1em;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #bfc9d1;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        button {
+            background: #2c3e50;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 14px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #1a232c;
+        }
+
+        .mensaje-exito {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        .mensaje-error {
+            color: #c0392b;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+        #fecha_anio {
+            font-size: 1.15em;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #bfc9d1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #fecha_anio:focus {
+            outline: none;
+            border-color: #2c3e50;
+        }
+
+        #mensaje {
+            margin-top: 16px;
+        }
+        .boton-volver {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        }
+    </style>
+    <script>
+        async function guardarHechoHistorico(event) {
+                event.preventDefault();
+                const descripcion = document.getElementById('descripcion').value.trim();
+                const id_museo = localStorage.getItem('id_museo');
+                const fecha_anio = document.getElementById('fecha_anio').value;
+
+                if (!descripcion) {
+                    mostrarMensaje('Por favor ingresa una descripción.', false);
+                    return;
+                }
+                if (!id_museo) {
+                    mostrarMensaje('No se ha seleccionado un museo.', false);
+                    return;
+                }
+                if (!fecha_anio) {
+                    mostrarMensaje('Por favor selecciona una fecha.', false);
+                    return;
+                }
+
+                const data = {
+                    descp_hechos: descripcion,
+                    id_museo: id_museo,
+                    fecha_anio: fecha_anio
+                };
+
+                const response = await fetch('/api/historico-museo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                document.getElementById('historico-form').reset();
+
+                if (response.ok) {
+                    mostrarMensaje('Hecho histórico guardado correctamente.', true);
+                    console.log('entroooooo');
+                } else {
+                    mostrarMensaje('Error al guardar el hecho histórico.', false);
+                }
+
+                
+            }
+            function mostrarMensaje(msg, exito) {
+                    const mensajeDiv = document.getElementById('mensaje');
+                    mensajeDiv.textContent = msg;
+                    mensajeDiv.className = exito ? 'mensaje-exito' : 'mensaje-error';
+                }
+    </script>
+</head>
+
+<body>
+    <div class="titulo-historico-container">
+        <div class="titulo-historico">
+            Ingresar Hecho Histórico
+        </div>
+    </div>
+    <form id="historico-form" onsubmit="guardarHechoHistorico(event)">
+        <label for="descripcion">Descripción del hecho histórico:</label>
+        <textarea id="descripcion" name="descripcion" required
+            placeholder="Describe el hecho histórico aquí..."></textarea>
+        <label for="fecha_anio" id="fecha_anio-label">Fecha del hecho histórico:</label>
+        <input type="date" id="fecha_anio" name="fecha_anio" required>
+        <button type="submit">Guardar Hecho Histórico</button>
+        <div id="mensaje"></div>
+    </form>
+    <div class="boton-volver">
+        <button onclick="window.location.href='menu.html'">Volver</button>
+    </div>
+</body>
+</html>
